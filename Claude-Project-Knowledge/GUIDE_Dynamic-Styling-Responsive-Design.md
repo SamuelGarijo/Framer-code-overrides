@@ -171,3 +171,52 @@ export function withResponsiveDesign(Component): ComponentType {
 This comprehensive override combines breakpoint detection for responsive layouts, dynamic styling based on hover state, and adaptive typography and spacing. It demonstrates how these techniques can work together to create a fully responsive and dynamic design in Framer.
 
 By mastering these techniques, you can create Framer prototypes that are not only responsive to different screen sizes but also dynamically adapt their styling and layout for an optimal user experience across devices.
+
+Handling Desktop-Specific Variants in Framer Overrides
+When creating responsive designs in Framer, it's often necessary to have different component variants for desktop and mobile views. Here's how to implement and manage viewport-specific variants in your Framer overrides:
+
+Define viewport-specific variants: In your shared store or type definitions, include variants for different viewports:
+
+typescriptCopyexport type Variant = "close/mob" | "open/mob" | "close/dsk" | "open/dsk"
+
+Update your shared store: Modify your store to handle the new variants:
+
+typescriptCopyexport function expandItemAndCollapseOthers(
+    store: StoreState,
+    itemToExpand: string
+): StoreState {
+    const newState = { ...store }
+    const newVariant: Variant =
+        newState.breakpoint === "mobile" ? "open/mob" : "open/dsk"
+    const closeVariant: Variant =
+        newState.breakpoint === "mobile" ? "close/mob" : "close/dsk"
+
+    // Use these new variables when updating item states
+    // ...
+}
+
+Modify your overrides: Update your overrides to handle the new variants:
+
+typescriptCopyexport function withVariantChange(Component): ComponentType {
+    return (props) => {
+        const { itemState, breakpoint } = useItemState(ITEM_NUMBER)
+
+        let variant = itemState.variant
+        if (breakpoint === "mobile") {
+            variant = itemState.mode === "span 2" ? "open/mob" : "close/mob"
+        } else {
+            variant = itemState.mode === "span 2" ? "open/dsk" : "close/dsk"
+        }
+
+        return <Component {...props} style={style} variant={variant} />
+    }
+}
+
+Handle transitions: If necessary, implement smooth transitions between viewport-specific variants:
+
+typescriptCopyconst style = {
+    ...props.style,
+    transition: "all 0.3s ease-in-out",
+    // Add other style properties specific to each variant
+}
+By following these steps, you can create and manage viewport-specific variants in your Framer overrides, allowing for more tailored and responsive designs across different device sizes.
