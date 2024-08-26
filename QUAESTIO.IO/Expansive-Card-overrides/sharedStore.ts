@@ -2,7 +2,7 @@
 
 import { createStore } from "https://framer.com/m/framer/store.js@^1.0.0"
 
-export type Variant = "close/mob" | "open/mob" | "open/dsk"
+export type Variant = "close/mob" | "open/mob" | "close/dsk" | "open/dsk"
 export type Breakpoint = "mobile" | "tablet" | "desktop"
 
 export interface ItemState {
@@ -107,6 +107,8 @@ export function expandItemAndCollapseOthers(
     const newState = { ...store }
     const newVariant: Variant =
         newState.breakpoint === "mobile" ? "open/mob" : "open/dsk"
+    const closeVariant: Variant =
+        newState.breakpoint === "mobile" ? "close/mob" : "close/dsk"
 
     Object.keys(newState.items).forEach((key) => {
         if (key === itemToExpand) {
@@ -117,7 +119,7 @@ export function expandItemAndCollapseOthers(
                 variant:
                     newState.items[key].mode === "span 1"
                         ? newVariant
-                        : "close/mob",
+                        : closeVariant,
                 hasBeenOpened: true,
                 backgroundColor:
                     newState.items[key].mode === "span 1"
@@ -130,7 +132,7 @@ export function expandItemAndCollapseOthers(
             newState.items[key] = {
                 ...newState.items[key],
                 mode: "span 1",
-                variant: "close/mob",
+                variant: closeVariant,
                 backgroundColor: newState.items[key].hasBeenOpened
                     ? store.expandedBackgroundColor
                     : "transparent",

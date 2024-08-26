@@ -118,12 +118,16 @@ export function withVariantChange(Component): ComponentType {
 
         const style = {
             ...props.style,
-            height: itemState.variant !== "close/mob" ? "90vh" : "fit-content",
+            height: itemState.variant.startsWith("open")
+                ? "90vh"
+                : "fit-content",
         }
 
         let variant = itemState.variant
-        if (itemState.variant === "open/mob" && breakpoint !== "mobile") {
-            variant = "open/dsk"
+        if (breakpoint === "mobile") {
+            variant = itemState.mode === "span 2" ? "open/mob" : "close/mob"
+        } else {
+            variant = itemState.mode === "span 2" ? "open/dsk" : "close/dsk"
         }
 
         return <Component {...props} style={style} variant={variant} />
