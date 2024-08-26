@@ -1,0 +1,18 @@
+We launched a new feature called “Fit Text,” which allows you to create bold headings that scale to fit any container. This feature supports multiple lines, inline formatting, and min and max widths, all while maintaining high performance. In this post I explain how we pulled this off.
+
+The Challenge: No Native CSS Solution
+I started by exploring existing libraries, but they all had a flaw: they needed to measure the text that needed to stretch before rendering. This is a deal-breaker for us, since Framer sites are statically generated and need to render perfectly in any browser before JavaScript runs. Next, I tried font-size: 100vw, which works great if the text fills the screen. However, it becomes challenging if you want the text to fill an arbitrary container. To do this, you need to build a complex CSS calc expression that represents the size of all ancestors expressed as percentages of the total vw. Although this is doable (and something that Framer already does to optimise image quality) it would make it tough to create a component that contained text with a vw size, since it would be hard to know the ancestors size inside the isolated component code.
+
+The Solution: SVG with viewBox and foreignObject
+I discovered that an SVG with a viewBox and support for HTML in SVG via a foreignObject element, could provide a scaling effect. This trick requires knowing the exact bounding box of the text and committing it to the viewBox, then rendering the text inside the SVG in a foreignObject. The foreignObject means that screen readers and SEO have no problem finding the text inside. The caveat is that the viewBox of the SVG needs to be updated whenever the size of the text changes, and it needs to kept in sync; otherwise, the text will become cut off or uncentered. This probably rules out this solution for most custom sites. It's simply not feasible to determine this viewBox any time any text is edited, or its properties that effect its size change.
+
+The Automation: Framer to the Rescue
+Luckily for us, Framer can automate this process, removing the hassle of having to manually update a viewBox anytime the text changes. Whenever you set text to “Fit”, Framer measures the text at its current font-size, gets the bounding box, saves it, and renders an SVG around your text with a viewBox. Every time you edit the text, Framer repeats that process to ensure the viewBox stays relative to the text. Framer can even support a seamless editing experience by converting the text size back to pixels whenever you open it in the text editor by doing some basic math based on its current width. When you finish editing, Framer puts the viewBox back, and it’s effortlessly scaling again without any performance impact on the canvas.
+
+The Result: Butter Smooth Resizing
+When you deploy your site, the viewBox is already calculated, so Framer can statically generate the site, and the text will render at the exact right size even before JavaScript is loaded. This results in no flashes, resizing, or fade-ins, and buttery smooth resizing.
+
+The Future: Container Queries
+In the future, we plan to switch to container queries once they are fully supported by the browsers that Framer supports. You can use the cqw unit the same way you can use a vw unit, but cqw is relative to the container. This would work for components, since it removes the need for a complex CSS calc statement.
+
+Fit Text is an excellent example of how Framer can abstract engineering work that would be hard to implement on a case-by-case basis and instead lets you focus on shipping fantastic sites. It’s exciting to see what people will build with this new feature.
