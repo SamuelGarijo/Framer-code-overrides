@@ -84,6 +84,7 @@ const useChartStyles = (props) => {
 }
 
 // Custom dot component for LineChart
+// Custom dot component for LineChart
 const CustomActiveDot = React.memo(
     ({
         cx,
@@ -97,16 +98,26 @@ const CustomActiveDot = React.memo(
     }) => {
         const [store, setStore] = useSharedStore()
 
+        // Check if this year is associated with a highlighted point
+        const isHighlighted = useMemo(
+            () =>
+                highlightedPoints?.some(
+                    (point) => point.year === payload.year && point.variantName
+                ),
+            [highlightedPoints, payload.year]
+        )
+
+        // Style only applies if the point is highlighted, otherwise invisible
         const dotStyle = useMemo(
             () => ({
-                cursor: highlightedPoints?.some(
-                    (point) => point.year === payload.year && point.variantName
-                )
-                    ? "pointer"
-                    : "default",
-                filter: "drop-shadow(0px 2px 3px rgba(0,0,0,0.3))",
+                cursor: isHighlighted ? "pointer" : "default",
+                filter: isHighlighted
+                    ? "drop-shadow(0px 2px 3px rgba(0,0,0,0.3))"
+                    : "none",
+                opacity: isHighlighted ? 1 : 0, // Completely invisible if not highlighted
+                pointerEvents: isHighlighted ? "auto" : "none", // Disable events if not highlighted
             }),
-            [highlightedPoints, payload.year]
+            [isHighlighted]
         )
 
         const handleClick = useCallback(() => {
