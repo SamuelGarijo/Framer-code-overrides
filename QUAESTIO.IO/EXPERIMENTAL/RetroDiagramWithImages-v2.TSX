@@ -107,14 +107,14 @@ const CustomActiveDot = React.memo(
             [highlightedPoints, payload.year]
         )
 
-        // Style only applies if the point is highlighted, otherwise invisible
+        // Always show the dot if it's highlighted
         const dotStyle = useMemo(
             () => ({
                 cursor: isHighlighted ? "pointer" : "default",
                 filter: isHighlighted
                     ? "drop-shadow(0px 2px 3px rgba(0,0,0,0.3))"
                     : "none",
-                opacity: isHighlighted ? 1 : 0, // Completely invisible if not highlighted
+                opacity: isHighlighted ? 1 : 0, // Fully visible if highlighted, otherwise invisible
                 pointerEvents: isHighlighted ? "auto" : "none", // Disable events if not highlighted
             }),
             [isHighlighted]
