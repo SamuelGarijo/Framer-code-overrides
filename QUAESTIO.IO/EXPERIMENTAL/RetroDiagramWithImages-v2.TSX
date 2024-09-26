@@ -10,6 +10,7 @@ import {
 } from "recharts"
 import { addPropertyControls, ControlType } from "framer"
 import { useSharedStore } from "./sharedStore.tsx"
+import { motion } from "framer-motion"
 
 // Custom hook for chart data
 const useChartData = (
@@ -103,16 +104,38 @@ const CustomDot = ({
     const fillColor = dataKey === "value1" ? lineColors.line1 : lineColors.line2
 
     return (
-        <circle
+        <motion.circle
             cx={cx}
             cy={cy}
-            r={6} // Ajusta el tamaño del punto
+            r={6}
             fill={fillColor}
             style={{
                 cursor: isHighlighted ? "pointer" : "default",
-                opacity: isHighlighted ? 1 : 0.25,
+                opacity: isHighlighted ? 1 : 0.2,
                 pointerEvents: isHighlighted ? "auto" : "none",
             }}
+            animate={
+                isHighlighted
+                    ? {
+                          scale: [1, 2.7, 1],
+                          y: [0, -3, 0],
+                          filter: [
+                              "drop-shadow(0px 4px 6px rgba(0,0,0,0.3))",
+                              "drop-shadow(0px 6px 10px rgba(0,0,0,0.5))",
+                              "none",
+                          ],
+                      }
+                    : {}
+            }
+            transition={
+                isHighlighted
+                    ? {
+                          duration: 1.2,
+                          repeat: 0,
+                          ease: "easeInOut",
+                      }
+                    : {}
+            }
         />
     )
 }
@@ -421,14 +444,21 @@ export function SimpleGraph(props: any) {
                         }
                         cursor={{
                             stroke: props.gridAndAxisColor,
-                            strokeOpacity: 0,
+                            strokeOpacity: 0.3,
                             strokeWidth: 1,
                         }}
                         offset={100}
                         wrapperStyle={{
-                            opacity: store.variant === "start" ? 1 : 0, // Cambia la opacidad según la variante
-                            pointerEvents:
-                                store.variant === "start" ? "auto" : "none", // Deshabilitar eventos de mouse cuando está oculto
+                            opacity: props.controlVisibility
+                                ? store.variant === "start"
+                                    ? 1
+                                    : 0
+                                : 1, // Cambia la opacidad según la variante
+                            pointerEvents: props.controlVisibility
+                                ? store.variant === "start"
+                                    ? "auto"
+                                    : "none"
+                                : "auto", // Deshabilitar eventos de mouse cuando está oculto
                             position: "absolute", // Fija el tooltip al viewport en lugar del contenedor
                             top: "50px", // Ajusta la posición en función de la ventana del navegador
                             left: "-50px", // Ajusta las coordenadas a tu necesidad
@@ -687,14 +717,21 @@ addPropertyControls(SimpleGraph, {
         defaultValue: "#000000",
         title: "Grid Color",
     },
+    controlVisibility: {
+        type: ControlType.Boolean,
+        defaultValue: true,
+        title: "Control Tooltip Visibility",
+    },
     highlightedPoints: {
         type: ControlType.Array,
         maxCount: 10,
         control: {
             type: ControlType.Object,
             controls: {
-                year: { type: ControlType.Number },
-                image: { type: ControlType.Image },
+                year: { type: ControlType.Number, defaultValue: 1961 },
+                image: {
+                    type: ControlType.Image,
+                },
                 variantName: {
                     type: ControlType.Enum,
                     defaultValue: "open1",
@@ -725,7 +762,12 @@ addPropertyControls(SimpleGraph, {
                 },
             },
         },
-        defaultValue: [],
+        defaultValue: [
+            {
+                year: 1961,
+                variantName: "open1",
+            },
+        ],
         title: "Key Points",
     },
     onPointClick: { type: ControlType.EventHandler },
