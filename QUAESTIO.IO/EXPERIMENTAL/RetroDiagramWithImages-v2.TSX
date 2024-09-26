@@ -83,7 +83,40 @@ const useChartStyles = (props) => {
     }
 }
 
-// Custom dot component for LineChart
+const CustomDot = ({
+    cx,
+    cy,
+    payload,
+    dataKey,
+    highlightedPoints,
+    lineColors,
+}) => {
+    // Verifica si el punto está resaltado
+    const isHighlighted = useMemo(
+        () => highlightedPoints?.some((point) => point.year === payload.year),
+        [highlightedPoints, payload.year]
+    )
+
+    // No renderiza el punto si no está resaltado
+    if (!cx || !cy) return null
+
+    const fillColor = dataKey === "value1" ? lineColors.line1 : lineColors.line2
+
+    return (
+        <circle
+            cx={cx}
+            cy={cy}
+            r={6} // Ajusta el tamaño del punto
+            fill={fillColor}
+            style={{
+                cursor: isHighlighted ? "pointer" : "default",
+                opacity: isHighlighted ? 1 : 0.25,
+                pointerEvents: isHighlighted ? "auto" : "none",
+            }}
+        />
+    )
+}
+
 // Custom dot component for LineChart
 const CustomActiveDot = React.memo(
     ({
@@ -307,7 +340,7 @@ export function SimpleGraph(props: any) {
 
     const yAxisDomain = useMemo(
         () => [
-            minValueY * 3, // Expande el valor mínimo hacia abajo (10% adicional)
+            minValueY * 1.5, // Expande el valor mínimo hacia abajo (10% adicional)
             maxValueY * 1.1, // Expande el valor máximo hacia arriba (10% adicional)
         ],
         [minValueY, maxValueY]
@@ -419,7 +452,16 @@ export function SimpleGraph(props: any) {
                                 highlightedPoints={props.highlightedPoints}
                             />
                         }
-                        dot={false}
+                        dot={
+                            <CustomDot
+                                highlightedPoints={props.highlightedPoints}
+                                lineColors={props.lineColors}
+                                cx={undefined}
+                                cy={undefined}
+                                payload={undefined}
+                                dataKey={undefined}
+                            />
+                        }
                     />
                     <Line
                         key="line2"
@@ -437,7 +479,16 @@ export function SimpleGraph(props: any) {
                                 highlightedPoints={props.highlightedPoints}
                             />
                         }
-                        dot={false}
+                        dot={
+                            <CustomDot
+                                highlightedPoints={props.highlightedPoints}
+                                lineColors={props.lineColors}
+                                cx={undefined}
+                                cy={undefined}
+                                payload={undefined}
+                                dataKey={undefined}
+                            />
+                        }
                     />
                 </LineChart>
             </ResponsiveContainer>
