@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from "react"
+import React, { useMemo, useCallback, useState, useEffect } from "react"
 import {
     LineChart,
     Line,
@@ -447,23 +447,24 @@ export function SimpleGraph(props: any) {
                             strokeOpacity: 0.3,
                             strokeWidth: 1,
                         }}
-                        offset={100}
-                        wrapperStyle={{
-                            opacity: props.controlVisibility
-                                ? store.variant === "start"
-                                    ? 1
-                                    : 0
-                                : 1, // Cambia la opacidad según la variante
-                            pointerEvents: props.controlVisibility
-                                ? store.variant === "start"
-                                    ? "auto"
-                                    : "none"
-                                : "auto", // Deshabilitar eventos de mouse cuando está oculto
-                            position: "absolute", // Fija el tooltip al viewport en lugar del contenedor
-                            top: "50px", // Ajusta la posición en función de la ventana del navegador
-                            left: "-50px", // Ajusta las coordenadas a tu necesidad
-                            zIndex: 4, // Asegura que esté sobre otros elementos
-                            overflow: "visible", // Permite que sobresalga
+                        wrapperStyle={(tooltipProps) => {
+                            return {
+                                opacity: props.controlVisibility
+                                    ? store.variant === "start"
+                                        ? 1
+                                        : 0
+                                    : 1, // Manage visibility via the variant store
+                                pointerEvents: props.controlVisibility
+                                    ? store.variant === "start"
+                                        ? "auto"
+                                        : "none"
+                                    : "auto",
+                                position: "absolute",
+                                top: `${tooltipProps.mouseY + 50}px`, // Offset Y by 10px
+                                left: `${tooltipProps.mouseX + 50}px`, // Offset X by 10px
+                                transform: "translateX(2%)", // Keep it centered horizontally
+                                zIndex: 4, // Ensure it's on top of other elements
+                            }
                         }}
                     />
                     <Line
