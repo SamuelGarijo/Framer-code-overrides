@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState, useEffect } from "react"
+import React, { useMemo, useCallback, useState, useEffect, useRef } from "react"
 import {
     LineChart,
     Line,
@@ -214,55 +214,95 @@ const CustomActiveDot = React.memo(
     }
 )
 
-// Tooltip component
-const MemoizedCustomTooltip = React.memo(
-    ({ active, payload, label, props }) => {
-        const [position, setPosition] = useState({ x: 0, y: 0 })
+export const MemoizedCustomTooltip = React.memo(
+    ({ active, payload, label, props, containerRef }) => {
+        const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
+        const [adjustedPosition, setAdjustedPosition] = useState({ x: 0, y: 0 })
+        const tooltipRef = useRef(null)
 
-        const handleMouseMove = useCallback((event) => {
-            const tooltipWidth = 230 // Ancho aproximado del tooltip
-            const margin = 10 // Margen entre el cursor y el tooltip
+        const handleMouseMove = useCallback(
+            (event) => {
+                if (!containerRef.current) return
 
-            // Posición del ratón
-            const xPos = event.clientX
-            const yPos = event.clientY
+                // Obtener las coordenadas del contenedor
+                const containerRect =
+                    containerRef.current.getBoundingClientRect()
 
-            // Dimensiones del viewport para evitar colisiones con los bordes
-            const viewportWidth = window.innerWidth
+                // Calcular la posición del ratón relativa al contenedor del gráfico
+                const xOverContainer = event.clientX - containerRect.left
+                const yOverContainer = event.clientY - containerRect.top
 
-            // Ajuste del eje X si el tooltip se sale de la pantalla
-            let adjustedX = xPos
-            if (xPos + tooltipWidth / 2 > viewportWidth) {
-                adjustedX = viewportWidth - tooltipWidth / 2 - margin
-            } else if (xPos - tooltipWidth / 2 < 0) {
-                adjustedX = tooltipWidth / 2 + margin
-            }
+                setTooltipPosition({ x: xOverContainer, y: yOverContainer })
 
-            // Ajustamos la posición del tooltip
-            setPosition({
-                x: adjustedX,
-                y: yPos + margin, // Posicionamos el tooltip debajo del cursor
-            })
-        }, [])
+                if (tooltipRef.current) {
+                    const tooltipWidth = tooltipRef.current.offsetWidth
+                    const tooltipHeight = tooltipRef.current.offsetHeight
 
-        // Manejamos el evento mousemove globalmente
+                    // Ajuste de posición basado en los límites del contenedor del gráfico
+                    let newX = xOverContainer + 20 // Por defecto, el tooltip va a la derecha
+                    let newY = yOverContainer + 20 // Por defecto, el tooltip va abajo
+
+                    // Detectar colisión con el borde derecho del contenedor
+                    if (
+                        xOverContainer + tooltipWidth + 20 >
+                        containerRect.width
+                    ) {
+                        newX = xOverContainer - tooltipWidth - 20 // Mover a la izquierda del cursor
+                    }
+
+                    // Detectar colisión con el borde izquierdo
+                    if (newX < 0) {
+                        newX = xOverContainer + 20 // Mover a la derecha si se sale por la izquierda
+                    }
+
+                    // --- Aquí implementamos el centrado vertical del tooltip ---
+
+                    // Espacio disponible en la parte superior e inferior del cursor
+                    const spaceAbove = yOverContainer - tooltipHeight / 2
+                    const spaceBelow =
+                        containerRect.height -
+                        (yOverContainer + tooltipHeight / 2)
+
+                    if (spaceAbove > 0 && spaceBelow > 0) {
+                        // Si hay espacio suficiente arriba y abajo, centramos verticalmente el tooltip
+                        newY = yOverContainer - tooltipHeight / 2 // Centrado vertical
+                    } else if (spaceBelow < 20) {
+                        // Si hay colisión con el borde inferior, movemos el tooltip hacia arriba
+                        newY = yOverContainer - tooltipHeight - 20
+                    }
+
+                    setAdjustedPosition({ x: newX, y: newY })
+                }
+            },
+            [containerRef]
+        )
+
         useEffect(() => {
-            window.addEventListener("mousemove", handleMouseMove)
-            return () => {
-                window.removeEventListener("mousemove", handleMouseMove)
+            if (containerRef.current) {
+                containerRef.current.addEventListener(
+                    "mousemove",
+                    handleMouseMove
+                )
             }
-        }, [handleMouseMove])
+            return () => {
+                if (containerRef.current) {
+                    containerRef.current.removeEventListener(
+                        "mousemove",
+                        handleMouseMove
+                    )
+                }
+            }
+        }, [handleMouseMove, containerRef])
 
-        // Renderizamos el tooltip solo si está activo y hay datos de payload
         if (active && payload && payload.length) {
             const { image } = payload[0].payload
             return (
                 <div
+                    ref={tooltipRef}
                     style={{
                         position: "absolute",
-                        top: `${position.y}px`, // Posicionar en Y según el ratón
-                        left: `${position.x}px`, // Posicionar en X según el ratón
-                        transform: "translateX(-50%)", // Centrar el tooltip horizontalmente
+                        top: `${adjustedPosition.y}px`,
+                        left: `${adjustedPosition.x}px`,
                         backgroundColor: props.backgroundColor,
                         border: `${props.axisLineWidth}px solid ${props.gridAndAxisColor}`,
                         padding: "10px",
@@ -271,10 +311,12 @@ const MemoizedCustomTooltip = React.memo(
                         fontWeight: props.fontWeight,
                         color: props.fontColor,
                         boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                        zIndex: 9999, // Aseguramos que esté sobre otros elementos
-                        maxWidth: "400px",
-                        minWidth: "230px",
+                        zIndex: 9999,
+                        width: "fit-content",
+                        minWidth: "164px",
                         whiteSpace: "normal",
+                        marginTop: "10px",
+                        pointerEvents: "none", // Evita interferencia con el ratón
                     }}
                 >
                     <p style={{ fontWeight: "bold", margin: "0 0 5px 0" }}>
@@ -312,6 +354,7 @@ const MemoizedCustomTooltip = React.memo(
 
 // Main graph component
 export function SimpleGraph(props: any) {
+    const containerRef = useRef(null)
     const [_, setStore] = useSharedStore()
     const [store] = useSharedStore()
 
@@ -387,7 +430,10 @@ export function SimpleGraph(props: any) {
     )
 
     return (
-        <div style={{ width: "100%", height: "100%", ...props.style }}>
+        <div
+            ref={containerRef}
+            style={{ width: "100%", height: "100%", ...props.style }}
+        >
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                     data={chartData}
@@ -454,6 +500,7 @@ export function SimpleGraph(props: any) {
                         content={
                             <MemoizedCustomTooltip
                                 props={props} // Todas las propiedades necesarias se pasan aquí
+                                containerRef={containerRef} //
                                 active={false} // Modificar según el estado activo del tooltip
                                 payload={undefined} // Datos relevantes para el tooltip
                                 label={""} // La etiqueta, si aplica
