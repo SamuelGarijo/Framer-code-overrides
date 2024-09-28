@@ -216,33 +216,53 @@ const CustomActiveDot = React.memo(
 
 // Tooltip component
 const MemoizedCustomTooltip = React.memo(
-    ({
-        active,
-        payload,
-        label,
-        props,
-    }: {
-        active: boolean
-        payload: any
-        label: string
-        props: any
-    }) => {
-        const [showClickInfo, setShowClickInfo] = useState(false)
+    ({ active, payload, label, props }) => {
+        const [position, setPosition] = useState({ x: 0, y: 0 })
 
-        const handleMouseEnter = useCallback(() => {
-            const timer = setTimeout(() => setShowClickInfo(true), 2000)
-            return () => clearTimeout(timer)
+        const handleMouseMove = useCallback((event) => {
+            const tooltipWidth = 230 // Ancho aproximado del tooltip
+            const margin = 10 // Margen entre el cursor y el tooltip
+
+            // Posición del ratón
+            const xPos = event.clientX
+            const yPos = event.clientY
+
+            // Dimensiones del viewport para evitar colisiones con los bordes
+            const viewportWidth = window.innerWidth
+
+            // Ajuste del eje X si el tooltip se sale de la pantalla
+            let adjustedX = xPos
+            if (xPos + tooltipWidth / 2 > viewportWidth) {
+                adjustedX = viewportWidth - tooltipWidth / 2 - margin
+            } else if (xPos - tooltipWidth / 2 < 0) {
+                adjustedX = tooltipWidth / 2 + margin
+            }
+
+            // Ajustamos la posición del tooltip
+            setPosition({
+                x: adjustedX,
+                y: yPos + margin, // Posicionamos el tooltip debajo del cursor
+            })
         }, [])
 
-        const handleMouseLeave = useCallback(() => {
-            setShowClickInfo(false)
-        }, [])
+        // Manejamos el evento mousemove globalmente
+        useEffect(() => {
+            window.addEventListener("mousemove", handleMouseMove)
+            return () => {
+                window.removeEventListener("mousemove", handleMouseMove)
+            }
+        }, [handleMouseMove])
 
+        // Renderizamos el tooltip solo si está activo y hay datos de payload
         if (active && payload && payload.length) {
             const { image } = payload[0].payload
             return (
                 <div
                     style={{
+                        position: "absolute",
+                        top: `${position.y}px`, // Posicionar en Y según el ratón
+                        left: `${position.x}px`, // Posicionar en X según el ratón
+                        transform: "translateX(-50%)", // Centrar el tooltip horizontalmente
                         backgroundColor: props.backgroundColor,
                         border: `${props.axisLineWidth}px solid ${props.gridAndAxisColor}`,
                         padding: "10px",
@@ -251,9 +271,11 @@ const MemoizedCustomTooltip = React.memo(
                         fontWeight: props.fontWeight,
                         color: props.fontColor,
                         boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                        zIndex: 9999, // Aseguramos que esté sobre otros elementos
+                        maxWidth: "400px",
+                        minWidth: "230px",
+                        whiteSpace: "normal",
                     }}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
                 >
                     <p style={{ fontWeight: "bold", margin: "0 0 5px 0" }}>
                         {`${props.popupYearLabel}: ${label}`}
@@ -279,11 +301,6 @@ const MemoizedCustomTooltip = React.memo(
                                     objectFit: "contain",
                                 }}
                             />
-                        </div>
-                    )}
-                    {showClickInfo && (
-                        <div style={{ marginTop: "10px", fontStyle: "italic" }}>
-                            Click for more info
                         </div>
                     )}
                 </div>
@@ -436,10 +453,10 @@ export function SimpleGraph(props: any) {
                     <Tooltip
                         content={
                             <MemoizedCustomTooltip
-                                props={props}
-                                active={false}
-                                payload={undefined}
-                                label={""}
+                                props={props} // Todas las propiedades necesarias se pasan aquí
+                                active={false} // Modificar según el estado activo del tooltip
+                                payload={undefined} // Datos relevantes para el tooltip
+                                label={""} // La etiqueta, si aplica
                             />
                         }
                         cursor={{
@@ -447,26 +464,8 @@ export function SimpleGraph(props: any) {
                             strokeOpacity: 0.3,
                             strokeWidth: 1,
                         }}
-                        wrapperStyle={(tooltipProps) => {
-                            return {
-                                opacity: props.controlVisibility
-                                    ? store.variant === "start"
-                                        ? 1
-                                        : 0
-                                    : 1, // Manage visibility via the variant store
-                                pointerEvents: props.controlVisibility
-                                    ? store.variant === "start"
-                                        ? "auto"
-                                        : "none"
-                                    : "auto",
-                                position: "absolute",
-                                top: `${tooltipProps.mouseY + 50}px`, // Offset Y by 10px
-                                left: `${tooltipProps.mouseX + 50}px`, // Offset X by 10px
-                                transform: "translateX(2%)", // Keep it centered horizontally
-                                zIndex: 4, // Ensure it's on top of other elements
-                            }
-                        }}
                     />
+
                     <Line
                         key="line1"
                         type={chartStyles.line1Style.type}
