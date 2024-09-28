@@ -1,5 +1,3 @@
-¡Me alegra muchísimo que todo haya salido bien! 🎉 Ahora te dejo una guía concisa sobre el posicionamiento de tooltips y una comparación entre el código inicial y la solución final.
-
 ### Guía de Posicionamiento de Tooltips
 
 El **tooltip** es un elemento flotante que aparece en respuesta a interacciones del usuario, generalmente con el ratón o el teclado, proporcionando información adicional. El reto principal al posicionar tooltips es asegurarse de que sean **dinámicos** y no interfieran con la interfaz, adaptándose al espacio disponible en pantalla o dentro de un contenedor específico.
@@ -72,5 +70,3 @@ El **tooltip** es un elemento flotante que aparece en respuesta a interacciones 
 ### Conclusión
 
 El posicionamiento de tooltips dinámicos puede parecer sencillo al principio, pero la clave está en considerar los **límites del contenedor** y no confiar únicamente en las coordenadas globales de la ventana. La lógica debe manejar adecuadamente las colisiones y ajustarse al espacio disponible. La solución implementada se adapta perfectamente a contenedores de gráficos y proporciona una experiencia fluida para el usuario final.
-
-¡Ahora tienes un tooltip completamente funcional y dinámico! 😄
