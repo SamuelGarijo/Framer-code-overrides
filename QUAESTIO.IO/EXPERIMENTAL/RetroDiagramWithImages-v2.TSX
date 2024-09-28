@@ -303,34 +303,40 @@ export const MemoizedCustomTooltip = React.memo(
                         position: "absolute",
                         top: `${adjustedPosition.y}px`,
                         left: `${adjustedPosition.x}px`,
-                        backgroundColor: props.backgroundColor,
-                        border: `${props.axisLineWidth}px solid ${props.gridAndAxisColor}`,
-                        padding: "10px",
-                        borderRadius: "4px",
-                        fontFamily: props.fontFamily,
-                        fontWeight: props.fontWeight,
-                        color: props.fontColor,
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                        backgroundColor: props.backgroundColor, // Retro color base
+                        border: `2px solid #59483b`, // Dark brown border to match the retro theme
+                        padding: "12px",
+                        borderRadius: "2px", // More rounded corners
+                        fontFamily:
+                            props.fontFamily || "'Courier New', monospace", // Retro/Grotesque font
+                        fontWeight: "bold",
+                        color: "#333", // Darker text for better contrast
+                        boxShadow: "0 4px 8px rgba(0,0,0,0.2)", // Softer shadow for a retro look
                         zIndex: 9999,
                         width: "fit-content",
                         minWidth: "164px",
                         whiteSpace: "normal",
                         marginTop: "10px",
-                        pointerEvents: "none", // Evita interferencia con el ratón
+                        pointerEvents: "none", // Avoid interaction
+                        // Retro divider styling (if necessary)
+                        borderTopLeftRadius: "2px",
+                        borderTopRightRadius: "2px",
                     }}
                 >
-                    <p style={{ fontWeight: "bold", margin: "0 0 5px 0" }}>
+                    <p
+                        style={{
+                            fontWeight: "bold",
+                            margin: "0 0 5px 0",
+                            color: "#59483b",
+                        }}
+                    >
                         {`${props.popupYearLabel}: ${label}`}
                     </p>
-                    <p style={{ margin: "2px 0" }}>
-                        {`${props.lineNames.line1}: ${payload[0].value.toFixed(
-                            props.yAxisDecimals
-                        )} ${props.valueUnit}`}
+                    <p style={{ margin: "2px 0", color: "#333" }}>
+                        {`${props.lineNames.line1}: ${payload[0].value.toFixed(props.yAxisDecimals)} ${props.valueUnit}`}
                     </p>
-                    <p style={{ margin: "2px 0" }}>
-                        {`${props.lineNames.line2}: ${payload[1].value.toFixed(
-                            props.yAxisDecimals
-                        )} ${props.valueUnit}`}
+                    <p style={{ margin: "2px 0", color: "#333" }}>
+                        {`${props.lineNames.line2}: ${payload[1].value.toFixed(props.yAxisDecimals)} ${props.valueUnit}`}
                     </p>
                     {image && (
                         <div style={{ marginTop: "10px" }}>
@@ -341,6 +347,8 @@ export const MemoizedCustomTooltip = React.memo(
                                     width: "100%",
                                     maxHeight: "100px",
                                     objectFit: "contain",
+                                    borderRadius: "4px", // Keep images clean with small rounded corners
+                                    border: "1px solid #333", // Retro border around images
                                 }}
                             />
                         </div>
