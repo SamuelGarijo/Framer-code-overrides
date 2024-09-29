@@ -11,6 +11,7 @@ import {
 import { addPropertyControls, ControlType } from "framer"
 import { useSharedStore } from "./sharedStore.tsx"
 import { motion } from "framer-motion"
+import CustomTooltip from "./CustomTooltip.tsx"
 
 // Custom hook for chart data
 const useChartData = (
@@ -214,152 +215,6 @@ const CustomActiveDot = React.memo(
     }
 )
 
-export const MemoizedCustomTooltip = React.memo(
-    ({ active, payload, label, props, containerRef }) => {
-        const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
-        const [adjustedPosition, setAdjustedPosition] = useState({ x: 0, y: 0 })
-        const tooltipRef = useRef(null)
-
-        const handleMouseMove = useCallback(
-            (event) => {
-                if (!containerRef.current) return
-
-                // Obtener las coordenadas del contenedor
-                const containerRect =
-                    containerRef.current.getBoundingClientRect()
-
-                // Calcular la posición del ratón relativa al contenedor del gráfico
-                const xOverContainer = event.clientX - containerRect.left
-                const yOverContainer = event.clientY - containerRect.top
-
-                setTooltipPosition({ x: xOverContainer, y: yOverContainer })
-
-                if (tooltipRef.current) {
-                    const tooltipWidth = tooltipRef.current.offsetWidth
-                    const tooltipHeight = tooltipRef.current.offsetHeight
-
-                    // Ajuste de posición basado en los límites del contenedor del gráfico
-                    let newX = xOverContainer + 20 // Por defecto, el tooltip va a la derecha
-                    let newY = yOverContainer + 20 // Por defecto, el tooltip va abajo
-
-                    // Detectar colisión con el borde derecho del contenedor
-                    if (
-                        xOverContainer + tooltipWidth + 20 >
-                        containerRect.width
-                    ) {
-                        newX = xOverContainer - tooltipWidth - 20 // Mover a la izquierda del cursor
-                    }
-
-                    // Detectar colisión con el borde izquierdo
-                    if (newX < 0) {
-                        newX = xOverContainer + 20 // Mover a la derecha si se sale por la izquierda
-                    }
-
-                    // --- Aquí implementamos el centrado vertical del tooltip ---
-
-                    // Espacio disponible en la parte superior e inferior del cursor
-                    const spaceAbove = yOverContainer - tooltipHeight / 2
-                    const spaceBelow =
-                        containerRect.height -
-                        (yOverContainer + tooltipHeight / 2)
-
-                    if (spaceAbove > 0 && spaceBelow > 0) {
-                        // Si hay espacio suficiente arriba y abajo, centramos verticalmente el tooltip
-                        newY = yOverContainer - tooltipHeight / 2 // Centrado vertical
-                    } else if (spaceBelow < 20) {
-                        // Si hay colisión con el borde inferior, movemos el tooltip hacia arriba
-                        newY = yOverContainer - tooltipHeight - 20
-                    }
-
-                    setAdjustedPosition({ x: newX, y: newY })
-                }
-            },
-            [containerRef]
-        )
-
-        useEffect(() => {
-            if (containerRef.current) {
-                containerRef.current.addEventListener(
-                    "mousemove",
-                    handleMouseMove
-                )
-            }
-            return () => {
-                if (containerRef.current) {
-                    containerRef.current.removeEventListener(
-                        "mousemove",
-                        handleMouseMove
-                    )
-                }
-            }
-        }, [handleMouseMove, containerRef])
-
-        if (active && payload && payload.length) {
-            const { image } = payload[0].payload
-            return (
-                <div
-                    ref={tooltipRef}
-                    style={{
-                        position: "absolute",
-                        top: `${adjustedPosition.y}px`,
-                        left: `${adjustedPosition.x}px`,
-                        backgroundColor: props.backgroundColor, // Retro color base
-                        border: `2px solid #59483b`, // Dark brown border to match the retro theme
-                        padding: "12px",
-                        borderRadius: "2px", // More rounded corners
-                        fontFamily:
-                            props.fontFamily || "'Courier New', monospace", // Retro/Grotesque font
-                        fontWeight: "bold",
-                        color: "#333", // Darker text for better contrast
-                        boxShadow: "0 4px 8px rgba(0,0,0,0.2)", // Softer shadow for a retro look
-                        zIndex: 9999,
-                        width: "fit-content",
-                        minWidth: "164px",
-                        whiteSpace: "normal",
-                        marginTop: "10px",
-                        pointerEvents: "none", // Avoid interaction
-                        // Retro divider styling (if necessary)
-                        borderTopLeftRadius: "2px",
-                        borderTopRightRadius: "2px",
-                    }}
-                >
-                    <p
-                        style={{
-                            fontWeight: "bold",
-                            margin: "0 0 5px 0",
-                            color: "#59483b",
-                        }}
-                    >
-                        {`${props.popupYearLabel}: ${label}`}
-                    </p>
-                    <p style={{ margin: "2px 0", color: "#333" }}>
-                        {`${props.lineNames.line1}: ${payload[0].value.toFixed(props.yAxisDecimals)} ${props.valueUnit}`}
-                    </p>
-                    <p style={{ margin: "2px 0", color: "#333" }}>
-                        {`${props.lineNames.line2}: ${payload[1].value.toFixed(props.yAxisDecimals)} ${props.valueUnit}`}
-                    </p>
-                    {image && (
-                        <div style={{ marginTop: "10px" }}>
-                            <img
-                                src={image}
-                                alt={`Image for ${label}`}
-                                style={{
-                                    width: "100%",
-                                    maxHeight: "100px",
-                                    objectFit: "contain",
-                                    borderRadius: "4px", // Keep images clean with small rounded corners
-                                    border: "1px solid #333", // Retro border around images
-                                }}
-                            />
-                        </div>
-                    )}
-                </div>
-            )
-        }
-        return null
-    }
-)
-
 // Main graph component
 export function SimpleGraph(props: any) {
     const containerRef = useRef(null)
@@ -383,12 +238,13 @@ export function SimpleGraph(props: any) {
         [setStore, props.highlightedPoints]
     )
 
-    const chartData = useChartData(
-        props.csvData,
-        props.manualData,
-        props.useCSV,
-        props.highlightedPoints
-    )
+    const chartData =
+        useChartData(
+            props.csvData,
+            props.manualData,
+            props.useCSV,
+            props.highlightedPoints
+        ) ?? []
     const chartStyles = useChartStyles(props)
 
     const minValueX = useMemo(
@@ -458,14 +314,23 @@ export function SimpleGraph(props: any) {
                         type="number"
                         domain={xAxisDomain}
                         tick={chartStyles.axisStyle}
-                        tickFormatter={(value) => value.toFixed(0)}
+                        tickFormatter={(value) =>
+                            value != null && !isNaN(value)
+                                ? value.toFixed(props.xAxisDecimals || 0)
+                                : ""
+                        } // Check for null/undefined and NaN
                         ticks={Array.from(
                             { length: props.xAxisSteps + 1 },
-                            (_, i) =>
-                                xAxisDomain[0] +
-                                ((xAxisDomain[1] - xAxisDomain[0]) /
-                                    props.xAxisSteps) *
-                                    i
+                            (_, i) => {
+                                const tickValue =
+                                    xAxisDomain[0] +
+                                    ((xAxisDomain[1] - xAxisDomain[0]) /
+                                        props.xAxisSteps) *
+                                        i
+                                return tickValue != null && !isNaN(tickValue)
+                                    ? tickValue
+                                    : 0 // Fallback for invalid ticks
+                            }
                         )}
                         axisLine={{
                             strokeWidth: props.axisLineWidth,
@@ -481,20 +346,23 @@ export function SimpleGraph(props: any) {
                         domain={yAxisDomain}
                         tick={chartStyles.axisStyle}
                         tickFormatter={(value) =>
-                            value.toFixed(props.yAxisDecimals)
-                        }
-                        ticks={(() => {
-                            const generatedTicks = Array.from(
-                                { length: props.yAxisSteps + 1 },
-                                (_, i) =>
+                            value != null && !isNaN(value)
+                                ? value.toFixed(props.yAxisDecimals || 0)
+                                : ""
+                        } // Check for null/undefined and NaN
+                        ticks={Array.from(
+                            { length: props.yAxisSteps + 1 },
+                            (_, i) => {
+                                const tickValue =
                                     yAxisDomain[0] +
                                     ((yAxisDomain[1] - yAxisDomain[0]) /
                                         props.yAxisSteps) *
                                         i
-                            )
-                            console.log("Generated ticks:", generatedTicks) // Verificación de los ticks generados
-                            return generatedTicks
-                        })()}
+                                return tickValue != null && !isNaN(tickValue)
+                                    ? tickValue
+                                    : 0 // Fallback for invalid ticks
+                            }
+                        )}
                         axisLine={{
                             strokeWidth: props.axisLineWidth,
                             stroke: props.gridAndAxisColor,
@@ -506,21 +374,13 @@ export function SimpleGraph(props: any) {
                     />
                     <Tooltip
                         content={
-                            <MemoizedCustomTooltip
-                                props={props} // Todas las propiedades necesarias se pasan aquí
-                                containerRef={containerRef} //
-                                active={false} // Modificar según el estado activo del tooltip
-                                payload={undefined} // Datos relevantes para el tooltip
-                                label={""} // La etiqueta, si aplica
+                            <CustomTooltip
+                                props={props}
+                                containerRef={containerRef}
+                                payload={undefined} // Ensure payload is defined correctly
                             />
                         }
-                        cursor={{
-                            stroke: props.gridAndAxisColor,
-                            strokeOpacity: 0.3,
-                            strokeWidth: 1,
-                        }}
                     />
-
                     <Line
                         key="line1"
                         type={chartStyles.line1Style.type}
@@ -670,11 +530,6 @@ addPropertyControls(SimpleGraph, {
         max: 3,
         step: 1,
         title: "Decimals",
-    },
-    backgroundColor: {
-        type: ControlType.Color,
-        defaultValue: "#FFFFFF",
-        title: "Tooltip BG",
     },
     showGrid: { type: ControlType.Boolean, defaultValue: true, title: "Grid" },
     popupYearLabel: {
